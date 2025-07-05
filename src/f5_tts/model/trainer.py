@@ -49,7 +49,7 @@ class Trainer:
         accelerate_kwargs: dict = dict(),
         ema_kwargs: dict = dict(),
         bnb_optimizer: bool = False,
-        mel_spec_type: str = "vocos",  # "vocos" | "bigvgan"
+        mel_spec_type: str = "vocos",  # "vocos" or | "bigvgan"
         is_local_vocoder: bool = False,  # use local path vocoder
         local_vocoder_path: str = "",  # local vocoder path
         model_cfg_dict: dict = dict(),  # training config
