@@ -2,7 +2,7 @@
 .vscode/
 tests/
 runs/
-ckpts/
+# ckpts/
 wandb/
 results/
 
