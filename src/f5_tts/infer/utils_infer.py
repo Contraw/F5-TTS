@@ -320,7 +320,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
         non_silent_wave = AudioSegment.silent(duration=0)
         for non_silent_seg in non_silent_segs:
             if len(non_silent_wave) > 6000 and len(non_silent_wave + non_silent_seg) > 12000:
-                # show_info("Audio is over 12s, clipping short. (1)")
+                show_info("Audio is over 12s, clipping short. (1)")
                 break
             non_silent_wave += non_silent_seg
 
@@ -332,7 +332,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
             non_silent_wave = AudioSegment.silent(duration=0)
             for non_silent_seg in non_silent_segs:
                 if len(non_silent_wave) > 6000 and len(non_silent_wave + non_silent_seg) > 12000:
-                    # show_info("Audio is over 12s, clipping short. (2)")
+                    show_info("Audio is over 12s, clipping short. (2)")
                     break
                 non_silent_wave += non_silent_seg
 
@@ -341,7 +341,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
         # 3. if no proper silence found for clipping
         if len(aseg) > 12000:
             aseg = aseg[:12000]
-            # show_info("Audio is over 12s, clipping short. (3)")
+            show_info("Audio is over 12s, clipping short. (3)")
 
         aseg = remove_silence_edges(aseg) + AudioSegment.silent(duration=50)
         aseg.export(temp_path, format="wav")
@@ -361,7 +361,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
             ref_text = transcribe(ref_audio)
             # Cache the transcribed text (not caching custom ref_text, enabling users to do manual tweak)
             _ref_text_cache[audio_hash] = ref_text
-    else:
+    # else:
         # show_info("Using custom reference text...")
 
     # Ensure ref_text ends with a proper sentence-ending punctuation
@@ -401,7 +401,7 @@ def infer_process(
     audio, sr = torchaudio.load(ref_audio)
     max_chars = int(len(ref_text.encode("utf-8")) / (audio.shape[-1] / sr) * (22 - audio.shape[-1] / sr) * speed)
     gen_text_batches = chunk_text(gen_text, max_chars=max_chars)
-    for i, gen_text in enumerate(gen_text_batches):
+    # for i, gen_text in enumerate(gen_text_batches):
     #     print(f"gen_text {i}", gen_text)
     # print("\n")
 
