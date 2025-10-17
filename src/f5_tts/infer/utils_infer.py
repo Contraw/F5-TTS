@@ -25,7 +25,6 @@ import torchaudio
 import tqdm
 from huggingface_hub import hf_hub_download
 from pydub import AudioSegment, silence
-from transformers import pipeline
 from vocos import Vocos
 
 from f5_tts.model import CFM
@@ -33,7 +32,6 @@ from f5_tts.model.utils import convert_char_to_pinyin, get_tokenizer
 
 
 _ref_audio_cache = {}
-_ref_text_cache = {}
 
 device = (
     "cuda"
@@ -141,45 +139,6 @@ def load_vocoder(vocoder_name="vocos", is_local=False, local_path="", device=dev
         vocoder.remove_weight_norm()
         vocoder = vocoder.eval().to(device)
     return vocoder
-
-
-# load asr pipeline
-
-asr_pipe = None
-
-
-def initialize_asr_pipeline(device: str = device, dtype=None):
-    if dtype is None:
-        dtype = (
-            torch.float16
-            if "cuda" in device
-            and torch.cuda.get_device_properties(device).major >= 7
-            and not torch.cuda.get_device_name().endswith("[ZLUDA]")
-            else torch.float32
-        )
-    global asr_pipe
-    asr_pipe = pipeline(
-        "automatic-speech-recognition",
-        model="openai/whisper-large-v3-turbo",
-        torch_dtype=dtype,
-        device=device,
-    )
-
-
-# transcribe
-
-
-def transcribe(ref_audio, language=None):
-    global asr_pipe
-    if asr_pipe is None:
-        initialize_asr_pipeline(device=device)
-    return asr_pipe(
-        ref_audio,
-        chunk_length_s=30,
-        batch_size=128,
-        generate_kwargs={"task": "transcribe", "language": language} if language else {"task": "transcribe"},
-        return_timestamps=False,
-    )["text"].strip()
 
 
 # load model checkpoint for inference
@@ -294,6 +253,12 @@ def remove_silence_edges(audio, silence_threshold=-42):
 
 
 def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
+    # If no reference text is provided, skip the processing for this audio.
+    if not ref_text.strip():
+        show_info("No reference text provided, skipping this audio. Please provide a reference text.")
+        # The calling function should handle this return value and skip inference.
+        return None, None
+
     # show_info("Converting audio...")
 
     # Compute a hash of the reference audio file
@@ -350,19 +315,7 @@ def preprocess_ref_audio_text(ref_audio_orig, ref_text, show_info=print):
         # Cache the processed reference audio
         _ref_audio_cache[audio_hash] = ref_audio
 
-    if not ref_text.strip():
-        global _ref_text_cache
-        if audio_hash in _ref_text_cache:
-            # Use cached asr transcription
-            # show_info("Using cached reference text...")
-            ref_text = _ref_text_cache[audio_hash]
-        else:
-            show_info("No reference text provided, transcribing reference audio...")
-            ref_text = transcribe(ref_audio)
-            # Cache the transcribed text (not caching custom ref_text, enabling users to do manual tweak)
-            _ref_text_cache[audio_hash] = ref_text
-    # else:
-        # show_info("Using custom reference text...")
+    # show_info("Using custom reference text...")
 
     # Ensure ref_text ends with a proper sentence-ending punctuation
     if not ref_text.endswith(". ") and not ref_text.endswith("。"):
